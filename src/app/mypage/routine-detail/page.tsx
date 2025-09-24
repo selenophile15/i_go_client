@@ -3,6 +3,7 @@ import NavBar from "@/components/common/topNav";
 // This directive is essential for using hooks like useState and event handlers
 
 import React, { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 // Define an interface for the structure of a routine routine
 interface routineroutine {
@@ -84,6 +85,17 @@ export default function routineFormPage() {
     // }
   };
 
+  //드래그앤드롭 완료 시 순서 바꾸기
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(routineroutines);
+    const [removed] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, removed);
+
+    setroutineroutines(items);
+  }
+
   return (
     <div className="flex flex-col w-full h-full">
       <NavBar title="루틴 상세" link="/mypage"></NavBar>
@@ -114,65 +126,97 @@ export default function routineFormPage() {
                     할일 목록
                   </h2>
 
-                  <div id="routine-contents" className="flex flex-col-reverse">
-                    {routineroutines.map((routine) => (
-                      <div
-                        key={routine.id}
-                        className="igo-form-routine-info-wrap mb-[15px] border-b border-gray-300 pb-6"
-                      >
-                        <div className="flex w-full justify-between items-center gap-[20px]">
-                          <div className="igo-form-input-wrap w-full">
-                            <div className="igo-form-input">
-                              <h3 className="text-[17px] tracking-[-0.8px] font-medium mb-1">
-                                할일
-                              </h3>
-                              <div className="flex gap-8 items-center">
-                                <input
-                                  type="text"
-                                  name="name"
-                                  required
-                                  value={routine.name}
-                                  onChange={(e) => handleChange(routine.id, e)}
-                                  className="border-[1px] border-[#dfdfdf] bg-[#fff] px-[10px] py-[6px] rounded-[4px] w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="igo-form-input-wrap max-w-[90px]">
-                            <div className="igo-form-input">
-                              <h3 className="text-[17px] tracking-[-0.8px] font-medium mb-1">
-                                수행시간 (분)
-                              </h3>
-                              <div className="flex gap-8 items-center">
-                                <input
-                                  type="number"
-                                  name="time"
-                                  required
-                                  value={routine.time}
-                                  onChange={(e) => handleChange(routine.id, e)}
-                                  className="border-[1px] border-[#dfdfdf] bg-[#fff] px-[10px] py-[6px] rounded-[4px] w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="text-right">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleRemoveroutineroutine(routine.id)
-                              }
-                              disabled={routine.disabled}
-                              className="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded text-sm shadow-md whitespace-nowrap disabled:!bg-[#dfdfdf] "
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="routine-list">
+                      {(provided) => (
+                        <div id="routine-contents" className="flex flex-col" {...provided.droppableProps} ref={provided.innerRef}>
+                          {routineroutines.map((routine, index) => (
+                            <Draggable
+                              key={routine.id}
+                              draggableId={routine.id.toString()}
+                              index={index}
                             >
-                              삭제
-                            </button>
-                          </div>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className="igo-form-routine-info-wrap mb-[15px] border-b border-gray-300 pb-6"
+                                >
+                                <div className="flex w-full justify-between items-center gap-[20px]">
+                                  <div className="igo-form-input-wrap max-w-[40px]">
+                                      <div className="igo-form-input">
+                                        <h3 className="text-[16px] tracking-[-0.8px] font-medium mb-1">
+                                          순서
+                                        </h3>
+                                        <div className="flex gap-8 items-center">
+                                          <p className="px-[10px] py-[6px] rounded-[4px] w-full select-none">
+                                            {index}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                  <div className="igo-form-input-wrap w-full">
+                                    <div className="igo-form-input">
+                                      <h3 className="text-[16px] tracking-[-0.8px] font-medium mb-1">
+                                        할일
+                                      </h3>
+                                      <div className="flex gap-8 items-center">
+                                        <input
+                                          type="text"
+                                          name="name"
+                                          required
+                                          disabled={index === 0}
+                                          value={routine.name}
+                                          onChange={(e) => handleChange(routine.id, e)}
+                                          className="border-[1px] border-[#dfdfdf] bg-[#fff] px-[10px] py-[6px] rounded-[4px] w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="igo-form-input-wrap max-w-[90px]">
+                                    <div className="igo-form-input">
+                                      <h3 className="text-[16px] tracking-[-0.8px] font-medium mb-1">
+                                        수행시간(분)
+                                      </h3>
+                                      <div className="flex gap-8 items-center">
+                                        <input
+                                          type="number"
+                                          name="time"
+                                          required
+                                          disabled={index === 0}
+                                          value={routine.time}
+                                          onChange={(e) => handleChange(routine.id, e)}
+                                          className="border-[1px] border-[#dfdfdf] bg-[#fff] px-[10px] py-[6px] rounded-[4px] w-full shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleRemoveroutineroutine(routine.id)
+                                      }
+                                      disabled={routine.disabled}
+                                      className="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded text-sm shadow-md whitespace-nowrap disabled:!bg-[#dfdfdf] "
+                                    >
+                                      삭제
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              )}
+                            </Draggable>
+                          ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+
                   <button
                     id="add-routine-btn"
                     type="button"
